@@ -1,18 +1,20 @@
 module Gandi
+  
   class Session
     HOST = "https://api.gandi.net/xmlrpc/"
     
     attr_reader :handler, :session_id
 
-    def initialize(login, password, host)
-      @login    = login
-      @password = password
-      @host     = host
+    def initialize(login, password, host, safe_mode = true)
+      @login     = login
+      @password  = password
+      @host      = host
+      @safe_mode = safe_mode
     end
     
     def connect
       @handler    = XMLRPC::Client.new2(@host)
-      @session_id = call("login", @login, @password)
+      @session_id = call("login", @login, @password, @safe_mode)
     end
     alias login connect
     
@@ -30,13 +32,15 @@ module Gandi
         raise NoMethodError, "method #{method} is not available in the GANDI API."
       end
     end
-        
+    
+    # Accepted arguments are:
+    # :host, :login, :password and :safe_mode (defaults to true)
     def self.connect(*args)
-      config = { :host => HOST }.merge(args.extract_options!)
+      config = { :host => HOST, :safe_mode => true }.merge(args.extract_options!)
       unless config[:login] && config[:password]
         raise ArgumentError, "login and password needed"
       end
-      client = self.new(config[:login], config[:password], config[:host])
+      client = self.new(config[:login], config[:password], config[:host], config[:safe_mode])
       client.connect
       return client
     end
